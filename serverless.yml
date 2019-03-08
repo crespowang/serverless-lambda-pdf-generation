@@ -1,0 +1,50 @@
+service: serverless-pdf-demo
+frameworkVersion: "1.37.0"
+
+provider:
+  name: aws
+  versionFunctions: false
+  runtime: nodejs8.10
+  region: ap-southeast-2
+  stage: dev
+  profile: hotpuma
+  package:
+    individually: true
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-domain-manager
+  - serverless-apigw-binary
+
+custom:
+  apigwBinary:
+    types:
+      - "application/pdf"
+
+  webpack:
+    webpackConfig: webpack.config.js
+    includeModules: true
+    packager: "yarn"
+
+  serverless-offline:
+    location: .webpack/service
+
+  customDomain:
+    domainName: labs.mianio.com
+    basePath: api
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+
+functions:
+  give-me-the-pdf:
+    handler: functions/pdf.generate
+    timeout: 20
+    events:
+      - http:
+          path: pdf
+          method: get
+          cors: true
+          parameters:
+            headers:
+              Accept: "application/pdf"
